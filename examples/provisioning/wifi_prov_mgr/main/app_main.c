@@ -16,6 +16,7 @@
 
 #include <esp_log.h>
 #include <esp_wifi.h>
+#include "esp_wpa2.h"
 #include <esp_event.h>
 #include <nvs_flash.h>
 
@@ -31,6 +32,11 @@
 #include "qrcode.h"
 
 static const char *TAG = "app";
+
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+/* WPA2 Enterprise: Identity in phase 1 of EAP procedure */
+#define EXAMPLE_PROV_WPA2_ENT_EAP_ID  CONFIG_EXAMPLE_PROV_WPA2_ENT_EAP_ID
+#endif /* CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT */
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
@@ -81,6 +87,30 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                 ESP_LOGI(TAG, "Provisioning successful");
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
                 retries = 0;
+#endif
+                break;
+            case WIFI_PROV_CRED_RECV_WPA2_ENT:
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+                ESP_LOGI(TAG, "Got WPA2 Enterprise credentials!");
+
+                esp_err_t ret = esp_wifi_sta_wpa2_ent_set_identity((const uint8_t *)EXAMPLE_PROV_WPA2_ENT_EAP_ID,
+                                strlen(EXAMPLE_PROV_WPA2_ENT_EAP_ID));
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to set EAP identity");
+                    break;
+                }
+#ifdef CONFIG_EXAMPLE_USE_CERT_BUNDLE
+                ret = esp_wifi_sta_wpa2_use_default_cert_bundle(true));
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to set WPA2 server cert!");
+                    break;
+                }
+#endif
+                ret = esp_wifi_sta_wpa2_ent_enable();
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to enable ENT");
+                    break;
+                }
 #endif
                 break;
             case WIFI_PROV_END:

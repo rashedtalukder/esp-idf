@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -27,9 +19,14 @@
 
 static const char *TAG = "wifi_prov_handlers";
 
+
 /* Provide definition of wifi_prov_ctx_t */
 struct wifi_prov_ctx {
     wifi_config_t wifi_cfg;
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+    wifi_auth_mode_t auth_mode;
+    wifi_prov_wpa2_ent_cred_t wpa2_ent_cred;
+#endif
 };
 
 static wifi_config_t *get_config(wifi_prov_ctx_t **ctx)
@@ -118,6 +115,20 @@ static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data,
     /* Using strlcpy allows both max passphrase length (63 bytes) and ensures null termination
      * because size of wifi_cfg->sta.password is 64 bytes (1 extra byte for null character) */
     strlcpy((char *) wifi_cfg->sta.password, req_data->password, sizeof(wifi_cfg->sta.password));
+
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+    if (req_data->auth_mode == WIFI_AUTH_WPA2_ENTERPRISE) {
+        (*ctx)->auth_mode = req_data->auth_mode;
+        memset(wifi_cfg->sta.password, 0, sizeof(wifi_cfg->sta.password));
+#if defined CONFIG_WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+        memset((*ctx)->wpa2_ent_cred.eap_uname, 0, sizeof((*ctx)->wpa2_ent_cred.eap_uname));
+        memcpy((*ctx)->wpa2_ent_cred.eap_uname, req_data->wpa2_ent_cred.eap_uname, sizeof((*ctx)->wpa2_ent_cred.eap_uname));
+
+        memset((*ctx)->wpa2_ent_cred.eap_pwd, 0, sizeof((*ctx)->wpa2_ent_cred.eap_pwd));
+        memcpy((*ctx)->wpa2_ent_cred.eap_pwd, req_data->wpa2_ent_cred.eap_pwd, sizeof((*ctx)->wpa2_ent_cred.eap_pwd));
+#endif
+        }
+#endif
     return ESP_OK;
 }
 
@@ -128,14 +139,27 @@ static esp_err_t apply_config_handler(wifi_prov_ctx_t **ctx)
         ESP_LOGE(TAG, "Wi-Fi config not set");
         return ESP_ERR_INVALID_STATE;
     }
+    esp_err_t ret = ESP_FAIL;
 
-    esp_err_t ret = wifi_prov_mgr_configure_sta(wifi_cfg);
-    if (ret == ESP_OK) {
-        ESP_LOGD(TAG, "Wi-Fi Credentials Applied");
-    } else {
-        ESP_LOGE(TAG, "Failed to apply Wi-Fi Credentials");
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+    if ((*ctx)->auth_mode == WIFI_AUTH_WPA2_ENTERPRISE) {
+        ret = wifi_prov_mgr_configure_sta_wpa2_ent(&(*ctx)->wpa2_ent_cred);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to apply WPA2 Enterprise AP Credentials");
+            goto cleanup;
+        }
     }
+    ESP_LOGD(TAG, "WPA2 Enterprise AP Credentials Applied");
+#endif
 
+    ret = wifi_prov_mgr_configure_sta(wifi_cfg);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to apply Wi-Fi Credentials");
+        goto cleanup;
+    }
+    ESP_LOGD(TAG, "Wi-Fi Credentials Applied");
+
+cleanup:
     free_config(ctx);
     return ret;
 }

@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _WIFI_PROV_CONFIG_H_
 #define _WIFI_PROV_CONFIG_H_
@@ -72,13 +64,28 @@ typedef struct {
 } wifi_prov_config_get_data_t;
 
 /**
+ * @brief Configurations for WPA2 Enterprise connections
+ *
+ */
+typedef struct {
+#if defined CONFIG_WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+    char    eap_uname[128];  /*!< WPA2_ENT: Username for PEAP/TTLS method */
+    char    eap_pwd[128];    /*!< WPA2_ENT: Password for PEAP/TTLS method */
+#endif
+} wifi_prov_wpa2_ent_cred_t;
+
+/**
  * @brief   WiFi config data received by slave during `set_config` request from master
  */
 typedef struct {
-    char    ssid[33];       /*!< SSID of the AP to which the slave is to be connected */
-    char    password[64];   /*!< Password of the AP */
-    char    bssid[6];       /*!< BSSID of the AP */
-    uint8_t channel;        /*!< Channel of the AP */
+    char    ssid[33];                       /*!< SSID of the AP to which the slave is to be connected */
+    char    password[64];                   /*!< Password of the AP */
+    char    bssid[6];                       /*!< BSSID of the AP */
+    uint8_t channel;                        /*!< Channel of the AP */
+    uint8_t auth_mode;                      /*!< Authorization mode of the AP */
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+    wifi_prov_wpa2_ent_cred_t wpa2_ent_cred;
+#endif
 } wifi_prov_config_set_data_t;
 
 /**

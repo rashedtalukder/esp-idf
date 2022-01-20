@@ -216,6 +216,58 @@ expected on success:
 CustomData response: SUCCESS
 ```
 
+### WPA2 Enterprise Provisioning
+
+Provisioning with WPA2 Enterprise APs is supported, but only for the `EAP/PEAP` method and over the `esp_prov` tool.
+
+On the target device side, the following config needs to be set with `idf.py menuconfig`:
+
+* In the `Example Configuration → Provisioning: WPA2 Enterprise AP Support` menu:
+   - Set `WPA2 Enterprise: EAP Outer Identity` - Identity for Phase I in EAP procedure
+
+**Note:** If the WPA2 Enterprise Server Validation fails due to invalid certificate (because the server has a custom certificate), the custom certificate can be attached to the bundle. For extending the bundle, enable `Add custom certificates to the default bundle` and specify the proper path in `Custom certificate bundle path` under `(Top) → Component config → mbedTLS → Certificate Bundle`.
+
+On the provisioner side, the `esp_prov` tool can be used to send the required credentials. Currently, the Android/iOS platforms do not support this feature.
+
+Example command:
+
+`python esp_prov.py --transport ble --service_name PROV_YYYYYY --pop abcd1234 --auth_mode 5 --ssid myssid --eap_uname myuname --eap_pwd mypwd`
+
+The Wi-Fi Scanning utility can also be used instead of using the above command. The EAP/PEAP username and password can be entered after selecting
+the AP.
+
+Example command:
+
+`python esp_prov.py --transport ble --service_name PROV_YYYYYY --pop abcd1234`
+
+See below the sample output from `esp_prov` tool on running above command:
+
+```
+...
+
+==== Starting Session ====
+==== Session Established ====
+
+==== Scanning Wi-Fi APs ====
+++++ Scan process executed in 3.552690029144287 sec
+++++ Scan results : 4
+
+++++ Scan finished in 3.9632301330566406 sec
+==== Wi-Fi Scan results ====
+S.N. SSID                              BSSID         CHN RSSI AUTH
+[ 1] myssid                            5a9f9c869171    6 -39  WPA2_PSK
+[ 2] myssid_wpa2_ent                   000456964841    2 -87  WPA2_ENTERPRISE
+
+Select AP by number (0 to rescan) : 2
+Enter EAP/PEAP username for myssid_wpa2_ent :
+Enter EAP/PEAP password for myssid_wpa2_ent :
+
+==== Sending Wi-Fi credential to esp32 ====
+==== Wi-Fi Credentials sent successfully ====
+
+...
+```
+
 ## Troubleshooting
 
 ### Provisioning failed

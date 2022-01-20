@@ -22,4 +22,29 @@ menu "Wi-Fi Provisioning Manager"
         depends on BT_ENABLED
         help
             This option is applicable only when provisioning transport is BLE.
+
+    menu "WPA2 Enterprise Support"
+
+        config WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+            bool "Support for WPA2 Enterprise APs"
+            default n
+            help
+                Enable provisioning support for WPA2 Enterprise APs
+
+                Note: Currently, only PEAP is supported as EAP Method.
+
+        choice
+            depends on WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+            prompt "EAP method to use"
+            default  WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+            config  WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+                bool "PEAP"
+        endchoice
+
+        config  WIFI_PROV_WPA2_ENT_EAP_METHOD
+            int
+            default 0 if  WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+
+    endmenu
+
 endmenu

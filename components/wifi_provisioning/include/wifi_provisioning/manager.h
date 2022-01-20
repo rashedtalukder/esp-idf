@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -73,6 +65,11 @@ typedef enum {
      * Signals that manager has been de-initialized
      */
     WIFI_PROV_DEINIT,
+
+    /**
+     * TO-DO
+     */
+    WIFI_PROV_CRED_RECV_WPA2_ENT,
 } wifi_prov_cb_event_t;
 
 typedef void (*wifi_prov_cb_func_t)(void *user_data, wifi_prov_cb_event_t event, void *event_data);
@@ -527,6 +524,18 @@ esp_err_t wifi_prov_mgr_get_wifi_state(wifi_prov_sta_state_t *state);
  *  - ESP_FAIL  : Provisioning app not running
  */
 esp_err_t wifi_prov_mgr_get_wifi_disconnect_reason(wifi_prov_sta_fail_reason_t *reason);
+
+
+/**
+ * @brief
+ *
+ * @param wpa2_ent_cred
+ *
+ * @return esp_err_t
+ */
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+esp_err_t wifi_prov_mgr_configure_sta_wpa2_ent(const wifi_prov_wpa2_ent_cred_t *wpa2_ent_cred);
+#endif
 
 /**
  * @brief   Runs Wi-Fi as Station with the supplied configuration

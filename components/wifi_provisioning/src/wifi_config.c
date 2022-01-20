@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -153,30 +145,53 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
     wifi_prov_config_set_data_t req_data;
     memset(&req_data, 0, sizeof(req_data));
 
+    CmdSetConfig *cfg = req->cmd_set_config;
+
     /* Check arguments provided in protobuf packet:
      * - SSID / Passphrase string length must be within the standard limits
      * - BSSID must either be NULL or have length equal to that imposed by the standard
      * If any of these conditions are not satisfied, don't invoke the handler and
      * send error status without closing connection */
     resp_payload->status = STATUS__InvalidArgument;
-    if (req->cmd_set_config->bssid.len != 0 &&
-        req->cmd_set_config->bssid.len != sizeof(req_data.bssid)) {
+    if (cfg->bssid.len != 0 &&
+            cfg->bssid.len != sizeof(req_data.bssid)) {
         ESP_LOGD(TAG, "Received invalid BSSID");
-    } else if (req->cmd_set_config->ssid.len >= sizeof(req_data.ssid)) {
+    } else if (cfg->ssid.len >= sizeof(req_data.ssid)) {
         ESP_LOGD(TAG, "Received invalid SSID");
-    } else if (req->cmd_set_config->passphrase.len >= sizeof(req_data.password)) {
+    } else if (cfg->passphrase.len >= sizeof(req_data.password)) {
         ESP_LOGD(TAG, "Received invalid Passphrase");
     } else {
         /* The received SSID and Passphrase are not NULL terminated so
          * we memcpy over zeroed out arrays. Above length checks ensure
          * that there is atleast 1 extra byte for null termination */
-        memcpy(req_data.ssid, req->cmd_set_config->ssid.data,
-               req->cmd_set_config->ssid.len);
-        memcpy(req_data.password, req->cmd_set_config->passphrase.data,
-               req->cmd_set_config->passphrase.len);
-        memcpy(req_data.bssid, req->cmd_set_config->bssid.data,
-               req->cmd_set_config->bssid.len);
-        req_data.channel = req->cmd_set_config->channel;
+        memcpy(req_data.ssid, cfg->ssid.data,
+               cfg->ssid.len);
+        memcpy(req_data.password, cfg->passphrase.data,
+               cfg->passphrase.len);
+        memcpy(req_data.bssid, cfg->bssid.data,
+               cfg->bssid.len);
+        req_data.channel = cfg->channel;
+        req_data.auth_mode = cfg->auth_mode;
+
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+        if (cfg->auth_mode == WIFI_AUTH_MODE__WPA2_ENTERPRISE) {
+#if defined CONFIG_WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+            if (cfg->wpa2_ent_eap_uname.len == 0 ||
+                    cfg->wpa2_ent_eap_uname.len >= sizeof(req_data.wpa2_ent_cred.eap_uname)) {
+                ESP_LOGD(TAG, "Received invalid WPA2 Enterprise EAP username");
+            } else if (cfg->wpa2_ent_eap_pwd.len == 0 ||
+                       cfg->wpa2_ent_eap_pwd.len >= sizeof(req_data.wpa2_ent_cred.eap_pwd)) {
+                ESP_LOGD(TAG, "Received invalid WPA2 Enterprise EAP password");
+            } else {
+                memcpy(req_data.wpa2_ent_cred.eap_uname, cfg->wpa2_ent_eap_uname.data,
+                       cfg->wpa2_ent_eap_uname.len);
+                memcpy(req_data.wpa2_ent_cred.eap_pwd, cfg->wpa2_ent_eap_pwd.data,
+                       cfg->wpa2_ent_eap_pwd.len);
+            }
+#endif
+        }
+#endif
+
         if (h->set_config_handler(&req_data, &h->ctx) == ESP_OK) {
             resp_payload->status = STATUS__Success;
         } else {

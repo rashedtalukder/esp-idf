@@ -59,4 +59,33 @@ menu "Example Configuration"
         default y
         help
             This enables BLE 4.2 features for Bluedroid.
+
+    menu "Provisioning: WPA2 Enterprise AP Support"
+        depends on WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+
+        config EXAMPLE_PROV_WPA2_ENT_EAP_ID
+            string "WPA2 Enterprise: EAP Outer Identity"
+            default "example@email.com"
+            help
+                Identity in phase 1 of EAP procedure.
+
+        config EXAMPLE_PROV_WPA2_ENT_VALIDATE_SERVER
+            bool "Validate WPA2 Enterprise server"
+            default y
+            help
+                Validate the WPA2 Enterprise servers' certificate using CA cert.
+
+        config EXAMPLE_PROV_WPA2_ENT_CERT_BUNDLE
+            bool "Use default cert bundle for server validation"
+            default y
+            depends on EXAMPLE_PROV_WPA2_ENT_VALIDATE_SERVER
+            help
+                Use cert from CA certificate bundle for WPA2 enterprise connection server validation
+
+                Note: In rare cases, the WPA2 Enterprise server's CA cert maybe not present in the
+                default bundle. Thus, the bundle will have to be extended using the following config
+                options - MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE and MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH.
+
+    endmenu
+
 endmenu

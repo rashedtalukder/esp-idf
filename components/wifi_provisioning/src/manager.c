@@ -16,6 +16,7 @@
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_wifi.h>
+#include "esp_wpa2.h"
 #include <esp_timer.h>
 
 #include <protocomm.h>
@@ -1125,6 +1126,53 @@ static void wifi_connect_timer_cb(void *arg)
         ESP_LOGE(TAG, "Failed to connect Wi-Fi");
     }
 }
+
+#ifdef CONFIG_WIFI_PROV_WPA2_ENTERPRISE_SUPPORT
+esp_err_t wifi_prov_mgr_configure_sta_wpa2_ent(const wifi_prov_wpa2_ent_cred_t *wpa2_ent_cred)
+{
+    if (!prov_ctx_lock) {
+        ESP_LOGE(TAG, "Provisioning manager not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ACQUIRE_LOCK(prov_ctx_lock);
+    if (!prov_ctx) {
+        ESP_LOGE(TAG, "Invalid state of Provisioning app");
+        RELEASE_LOCK(prov_ctx_lock);
+        return ESP_FAIL;
+    }
+    if (prov_ctx->prov_state >= WIFI_PROV_STATE_CRED_RECV) {
+        ESP_LOGE(TAG, "Wi-Fi already connecting to AP");
+        RELEASE_LOCK(prov_ctx_lock);
+        return ESP_FAIL;
+    }
+
+#if defined CONFIG_WIFI_PROV_WPA2_ENT_EAP_METHOD_PEAP
+    ESP_LOGW(TAG, "WPA2 Enterprise -> Username: %s | Password: %s", wpa2_ent_cred->eap_uname, wpa2_ent_cred->eap_pwd);
+
+    esp_err_t ret = esp_wifi_sta_wpa2_ent_set_username((const uint8_t *) wpa2_ent_cred->eap_uname,
+                    strnlen(wpa2_ent_cred->eap_uname, sizeof(wpa2_ent_cred->eap_uname)));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set username");
+        RELEASE_LOCK(prov_ctx_lock);
+        return ret;
+    }
+
+    ret = esp_wifi_sta_wpa2_ent_set_password((const uint8_t *) wpa2_ent_cred->eap_pwd,
+            strnlen(wpa2_ent_cred->eap_pwd, sizeof(wpa2_ent_cred->eap_pwd)));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set password");
+        RELEASE_LOCK(prov_ctx_lock);
+        return ret;
+    }
+#endif
+
+    execute_event_cb(WIFI_PROV_CRED_RECV_WPA2_ENT, NULL, 0);
+    RELEASE_LOCK(prov_ctx_lock);
+
+    return ESP_OK;
+}
+#endif
 
 esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
 {
