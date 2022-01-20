@@ -1,16 +1,5 @@
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 # APIs for interpreting and creating protobuf packets for Wi-Fi provisioning
@@ -65,12 +54,17 @@ def config_get_status_response(security_ctx, response_data):
     return 'unknown'
 
 
-def config_set_config_request(security_ctx, ssid, passphrase):
+def config_set_config_request(security_ctx, ssid, passphrase, auth_mode, wpa2_ent_eap_uname, wpa2_ent_eap_pwd):
     # Form protobuf request packet for SetConfig command
     cmd = proto.wifi_config_pb2.WiFiConfigPayload()
     cmd.msg = proto.wifi_config_pb2.TypeCmdSetConfig
     cmd.cmd_set_config.ssid = tobytes(ssid)
-    cmd.cmd_set_config.passphrase = tobytes(passphrase)
+    cmd.cmd_set_config.auth_mode = auth_mode
+    if (auth_mode == proto.wifi_constants_pb2.WifiAuthMode.WPA2_ENTERPRISE):
+        cmd.cmd_set_config.wpa2_ent_eap_uname = tobytes(wpa2_ent_eap_uname)
+        cmd.cmd_set_config.wpa2_ent_eap_pwd = tobytes(wpa2_ent_eap_pwd)
+    else:
+        cmd.cmd_set_config.passphrase = tobytes(passphrase)
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
     print_verbose(security_ctx, 'Client -> Device (SetConfig cmd) ' + utils.str_to_hexstr(enc_cmd))
     return enc_cmd

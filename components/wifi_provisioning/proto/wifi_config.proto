@@ -21,6 +21,9 @@ message CmdSetConfig {
     bytes passphrase = 2;
     bytes bssid = 3;
     int32 channel = 4;
+    WifiAuthMode auth_mode = 5;
+    bytes wpa2_ent_eap_uname = 6;
+    bytes wpa2_ent_eap_pwd = 7;
 }
 
 message RespSetConfig {

@@ -418,7 +418,7 @@ const ProtobufCMessageDescriptor resp_get_status__descriptor =
   (ProtobufCMessageInit) resp_get_status__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor cmd_set_config__field_descriptors[4] =
+static const ProtobufCFieldDescriptor cmd_set_config__field_descriptors[7] =
 {
   {
     "ssid",
@@ -468,17 +468,56 @@ static const ProtobufCFieldDescriptor cmd_set_config__field_descriptors[4] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "auth_mode",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(CmdSetConfig, auth_mode),
+    &wifi_auth_mode__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "wpa2_ent_eap_uname",
+    6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CmdSetConfig, wpa2_ent_eap_uname),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "wpa2_ent_eap_pwd",
+    7,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_BYTES,
+    0,   /* quantifier_offset */
+    offsetof(CmdSetConfig, wpa2_ent_eap_pwd),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned cmd_set_config__field_indices_by_name[] = {
+  4,   /* field[4] = auth_mode */
   2,   /* field[2] = bssid */
   3,   /* field[3] = channel */
   1,   /* field[1] = passphrase */
   0,   /* field[0] = ssid */
+  6,   /* field[6] = wpa2_ent_eap_pwd */
+  5,   /* field[5] = wpa2_ent_eap_uname */
 };
 static const ProtobufCIntRange cmd_set_config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 7 }
 };
 const ProtobufCMessageDescriptor cmd_set_config__descriptor =
 {
@@ -488,7 +527,7 @@ const ProtobufCMessageDescriptor cmd_set_config__descriptor =
   "CmdSetConfig",
   "",
   sizeof(CmdSetConfig),
-  4,
+  7,
   cmd_set_config__field_descriptors,
   cmd_set_config__field_indices_by_name,
   1,  cmd_set_config__number_ranges,

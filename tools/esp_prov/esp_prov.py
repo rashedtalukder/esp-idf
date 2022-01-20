@@ -19,6 +19,7 @@ try:
     import prov
     import security
     import transport
+    from proto import wifi_constants_pb2 as wifi_const
 
 except ImportError:
     idf_path = os.environ['IDF_PATH']
@@ -28,6 +29,7 @@ except ImportError:
     import prov
     import security
     import transport
+    from proto import wifi_constants_pb2 as wifi_const
 
 # Set this to true to allow exceptions to be thrown
 config_throw_except = False
@@ -236,9 +238,9 @@ def scan_wifi_APs(sel_transport, tp, sec):
     return APs
 
 
-def send_wifi_config(tp, sec, ssid, passphrase):
+def send_wifi_config(tp, sec, ssid, passphrase, auth_mode, wpa2_ent_eap_uname, wpa2_ent_eap_pwd):
     try:
-        message = prov.config_set_config_request(sec, ssid, passphrase)
+        message = prov.config_set_config_request(sec, ssid, passphrase, auth_mode, wpa2_ent_eap_uname, wpa2_ent_eap_pwd)
         response = tp.send_data('prov-config', message)
         return (prov.config_set_config_response(sec, response) == 0)
     except RuntimeError as e:
@@ -354,6 +356,29 @@ if __name__ == '__main__':
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
 
+    parser.add_argument('--auth_mode', dest='auth_mode', type=int, default=3,
+                        help=desc_format(
+                            'This configures the device to use Authenication Mode for the Wi-Fi network to which '
+                            'we would like it to connect to permanently, once provisioning is complete. '
+                            'If Wi-Fi scanning is supported by the provisioning service, this need not '
+                            'be specified. Default: WPA2_PSK. Accepted values are: ',
+                            '\t- 0 : Open',
+                            '\t- 1 : WEP',
+                            '\t- 2 : WPA_PSK',
+                            '\t- 3 : WPA2_PSK',
+                            '\t- 4 : WPA_WPA2_PSK',
+                            '\t- 5 : WPA2_ENTERPRISE'))
+
+    parser.add_argument('--eap_uname', dest='wpa2_ent_eap_uname', type=str, default='',
+                        help=desc_format(
+                            'This is an optional parameter, intended to use only when the auth_mode '
+                            'is WPA2_ENTERPRISE. Specifies the username for PEAP/TTLS method.'))
+
+    parser.add_argument('--eap_pwd', dest='wpa2_ent_eap_pwd', type=str, default='',
+                        help=desc_format(
+                            'This is an optional parameter, intended to use only when the auth_mode '
+                            'is WPA2_ENTERPRISE. Specifies the password for PEAP/TTLS method.'))
+
     parser.add_argument('--custom_data', dest='custom_data', type=str, default='',
                         help=desc_format(
                             'This is an optional parameter, only intended for use with '
@@ -454,19 +479,34 @@ if __name__ == '__main__':
                 break
 
         args.ssid = APs[select - 1]['ssid']
-        prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
-        args.passphrase = getpass(prompt_str)
+        conn_auth_mode = APs[select - 1]['auth']
+        args.auth_mode = wifi_const.WifiAuthMode.Value(conn_auth_mode)
+
+        if (args.auth_mode != wifi_const.WifiAuthMode.WPA2_ENTERPRISE):
+            prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
+            args.passphrase = getpass(prompt_str)
+        else:
+            prompt_str = 'Enter EAP/PEAP username for {0} : '.format(args.ssid)
+            args.wpa2_ent_eap_uname = getpass(prompt_str)
+            prompt_str = 'Enter EAP/PEAP password for {0} : '.format(args.ssid)
+            args.wpa2_ent_eap_pwd = getpass(prompt_str)
+
+    if (args.auth_mode == wifi_const.WifiAuthMode.WPA2_ENTERPRISE):
+        if (not args.wpa2_ent_eap_uname or not args.wpa2_ent_eap_pwd):
+            print('---- For WPA2 Enterprise authentication mode, corresponding PEAP/TTLS username and password cannot be empty! ----')
+            exit(6)
 
     print('\n==== Sending Wi-Fi credential to esp32 ====')
-    if not send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase):
+    if not send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase,
+                            args.auth_mode, args.wpa2_ent_eap_uname, args.wpa2_ent_eap_pwd):
         print('---- Error in send Wi-Fi config ----')
-        exit(6)
+        exit(7)
     print('==== Wi-Fi Credentials sent successfully ====')
 
     print('\n==== Applying config to esp32 ====')
     if not apply_wifi_config(obj_transport, obj_security):
         print('---- Error in apply Wi-Fi config ----')
-        exit(7)
+        exit(8)
     print('==== Apply config sent successfully ====')
 
     wait_wifi_connected(obj_transport, obj_security)
