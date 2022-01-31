@@ -1910,7 +1910,6 @@ components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_uart.c
 components/vfs/vfs_eventfd.c
-components/wifi_provisioning/include/wifi_provisioning/manager.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
@@ -2515,7 +2514,6 @@ examples/protocols/static_ip/main/static_ip_example_main.c
 examples/protocols/websocket/example_test.py
 examples/protocols/websocket/main/websocket_example.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
-examples/provisioning/wifi_prov_mgr/wifi_prov_mgr_test.py
 examples/security/flash_encryption/example_test.py
 examples/security/flash_encryption/main/flash_encrypt_main.c
 examples/storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c
