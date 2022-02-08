@@ -34,6 +34,13 @@ menu "Example Configuration"
             default y
     endif
 
+    config EXAMPLE_USE_DEFAULT_CERT_BUNDLE
+        bool "Use default cert bundle"
+        depends on EXAMPLE_VALIDATE_SERVER_CERT
+        default n
+        help
+            Use default CA certificate bundle for WPA enterprise connection
+
     choice
         prompt "EAP method for the example to use"
         default EXAMPLE_EAP_METHOD_PEAP
